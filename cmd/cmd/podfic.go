@@ -3,12 +3,12 @@ package cmd
 import (
 	"log"
 
-	"github.com/ohzqq/urmeta/ao3"
+	"github.com/ohzqq/ao3"
 	"github.com/spf13/cobra"
 )
 
-// ao3PodficCmd represents the ao3Podfic command
-var ao3PodficCmd = &cobra.Command{
+// podficCmd represents the podfic command
+var podficCmd = &cobra.Command{
 	Use:     "podfic",
 	Aliases: []string{"p"},
 	Short:   "scrape a podfic",
@@ -23,5 +23,5 @@ var ao3PodficCmd = &cobra.Command{
 }
 
 func init() {
-	ao3Cmd.AddCommand(ao3PodficCmd)
+	rootCmd.AddCommand(podficCmd)
 }

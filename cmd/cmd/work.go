@@ -3,12 +3,12 @@ package cmd
 import (
 	"log"
 
-	"github.com/ohzqq/urmeta/ao3"
+	"github.com/ohzqq/ao3"
 	"github.com/spf13/cobra"
 )
 
-// ao3WorkCmd represents the ao3Work command
-var ao3WorkCmd = &cobra.Command{
+// workCmd represents the work command
+var workCmd = &cobra.Command{
 	Use:     "work",
 	Aliases: []string{"w"},
 	Short:   "scrape a work",
@@ -23,5 +23,5 @@ var ao3WorkCmd = &cobra.Command{
 }
 
 func init() {
-	ao3Cmd.AddCommand(ao3WorkCmd)
+	rootCmd.AddCommand(workCmd)
 }
