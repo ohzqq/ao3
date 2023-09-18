@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -17,6 +18,7 @@ var (
 	query       = &ao3.Query{}
 	flagURI     string
 	noSave      bool
+	flagEncode  string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -38,18 +40,28 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&flagURI, "url", "u", "", "scrape url")
 	rootCmd.PersistentFlags().BoolVar(&noSave, "no-save", false, "don't write metadata to disk")
+	rootCmd.PersistentFlags().BoolVarP(&isPodfic, "podfic", "p", false, "scrape podfic url")
+
+	rootCmd.PersistentFlags().StringVarP(&flagEncode, "encode", "e", ".yaml", "encode [.yaml|.toml|.json]")
+
 	rootCmd.PersistentFlags().StringSliceVarP(&formats, "formats", "f", []string{".epub"}, "format to download")
 	rootCmd.PersistentFlags().BoolVarP(&noDownloads, "no-downloads", "d", false, "don't download any formats")
 	rootCmd.MarkFlagsMutuallyExclusive("formats", "no-downloads")
-
-	rootCmd.PersistentFlags().BoolVarP(&isPodfic, "podfic", "p", false, "scrape podfic url")
 }
 
 func processMetadata(books []cdb.Book) {
 	for _, b := range books {
-		fmt.Printf("%#v\n", b)
+		//fmt.Printf("%#v\n", b)
 		if !noSave {
-			//urmeta.SaveMetadata(b)
+			err := b.Save(b.Title, flagEncode, editable)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err := b.Print(flagEncode, editable)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		if !noDownloads {
 			downloadFormats(b)

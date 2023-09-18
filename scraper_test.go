@@ -3,6 +3,8 @@ package ao3
 import (
 	"fmt"
 	"testing"
+
+	"github.com/danielgtaylor/casing"
 )
 
 const (
@@ -69,5 +71,19 @@ func TestWork(t *testing.T) {
 
 	for k, v := range books[0].StringMapString() {
 		fmt.Printf("%s: %s\n", k, v)
+	}
+}
+
+func TestWorkCmd(t *testing.T) {
+	books, err := Work(testWork, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, book := range books {
+		err := book.Save(casing.Snake(book.Title)+".yaml", true)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 }

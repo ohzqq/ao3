@@ -67,7 +67,7 @@ func getPubdate(ctx context.Context, book *cdb.Book) {
 		t = time.Now()
 	}
 
-	book.Pubdate = &t
+	book.Pubdate = t
 }
 
 func getSeries(ctx context.Context, book *cdb.Book) {
