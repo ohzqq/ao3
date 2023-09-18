@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/danielgtaylor/casing"
 	"github.com/ohzqq/ao3"
 	"github.com/ohzqq/cdb"
 	"github.com/spf13/cobra"
@@ -51,14 +52,14 @@ func init() {
 
 func processMetadata(books []cdb.Book) {
 	for _, b := range books {
-		//fmt.Printf("%#v\n", b)
 		if !noSave {
-			err := b.Save(b.Title, flagEncode, editable)
+			name := casing.Snake(b.Title) + flagEncode
+			err := b.Save(name, true)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			err := b.Print(flagEncode, editable)
+			err := b.Print(flagEncode, true)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -74,7 +75,8 @@ func downloadFormats(b cdb.Book) {
 		for _, ext := range formats {
 			if strings.Contains(f, ext) {
 				fmt.Printf("downloading %s\n", b.Title+ext)
-				ao3.DownloadWork(f, b.Title+ext)
+				name := casing.Snake(b.Title) + ext
+				ao3.DownloadWork(f, name)
 			}
 		}
 	}

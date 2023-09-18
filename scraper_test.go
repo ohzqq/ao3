@@ -2,9 +2,11 @@ package ao3
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/danielgtaylor/casing"
+	"github.com/ohzqq/cdb"
 )
 
 const (
@@ -85,5 +87,24 @@ func TestWorkCmd(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+	}
+}
+
+func TestReadMeta(t *testing.T) {
+	files, err := filepath.Glob("testdata/*")
+	if err != nil {
+		t.Error(err)
+	}
+	for _, file := range files {
+		dec, err := cdb.ReadMetadataFile(file)
+		if err != nil {
+			t.Error(err)
+		}
+		var book cdb.Book
+		err = dec.Decode(&book)
+		if err != nil {
+			t.Error(err)
+		}
+		fmt.Printf("%#v\n", book)
 	}
 }
