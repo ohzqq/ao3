@@ -89,7 +89,7 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 	actions := []chromedp.Action{
 		Sleep(5 * time.Second),
 		chromedp.Navigate(u),
-		GetString(Title, &work.Title),
+		GetTitle(&work.Title),
 		GetInnerHTML(Comments, &work.Comments),
 		GetString(Pubdate, &pubdate),
 		GetNodes(Downloads, &formats),

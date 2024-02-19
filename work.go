@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	Title        = `h2.title`
+	Title        = `.preface h2.title`
 	Author       = `h3.byline a`
 	Series       = `dd.series .position`
 	Comments     = `.preface .summary .userstuff`
@@ -29,6 +29,15 @@ const (
 	RelatedWorks = `ul.associations li a`
 	Downloads    = `li.download ul li a`
 )
+
+func GetTitle(val *string) chromedp.Action {
+	return chromedp.Action(chromedp.Text(
+		Title,
+		val,
+		chromedp.ByQuery,
+		chromedp.NodeReady,
+	))
+}
 
 func GetString(sel string, val *string) chromedp.Action {
 	return chromedp.Action(chromedp.Text(

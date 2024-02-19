@@ -82,12 +82,13 @@ func TestWork(t *testing.T) {
 func TestWorkCmd(t *testing.T) {
 	books, err := Scrape(testWork)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
+		return
 	}
 
 	for _, book := range books {
 		if book.Title == "" {
-			t.Error("no title")
+			t.Fatal("no title")
 		}
 		err := book.Save(casing.Snake(book.Title)+".yaml", true)
 		if err != nil {
