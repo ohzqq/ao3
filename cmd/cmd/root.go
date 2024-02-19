@@ -18,13 +18,8 @@ import (
 )
 
 var (
-	isPodfic    bool
-	formats     []string
-	noDownloads bool
-	query       = &ao3.Query{}
-	flagURI     string
-	noSave      bool
-	flagEncode  string
+	query  = &ao3.Query{}
+	ffmeta bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -46,15 +41,16 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVarP(&flagURI, "url", "u", "", "scrape url")
-	rootCmd.PersistentFlags().BoolVar(&noSave, "no-save", false, "don't write metadata to disk")
+	rootCmd.PersistentFlags().StringP("url", "u", "", "scrape url")
+	rootCmd.PersistentFlags().Bool("no-save", false, "don't write metadata to disk")
 
-	rootCmd.PersistentFlags().BoolVarP(&isPodfic, "podfic", "p", false, "scrape podfic url")
+	rootCmd.PersistentFlags().BoolP("podfic", "p", false, "scrape podfic url")
+	rootCmd.PersistentFlags().BoolVarP(&ffmeta, "ffmeta", "m", false, "write ffmeta")
 
-	rootCmd.PersistentFlags().StringVarP(&flagEncode, "encode", "e", ".yaml", "encode [.yaml|.toml|.json|.ini]")
+	rootCmd.PersistentFlags().StringP("encode", "e", ".yaml", "encode [.yaml|.toml|.json|.ini]")
 
-	rootCmd.PersistentFlags().StringSliceVarP(&formats, "formats", "f", []string{".epub"}, "format to download")
-	rootCmd.PersistentFlags().BoolVarP(&noDownloads, "no-downloads", "d", false, "don't download any formats")
+	rootCmd.PersistentFlags().StringSliceP("formats", "f", []string{".epub"}, "format to download")
+	rootCmd.PersistentFlags().BoolP("no-downloads", "d", false, "don't download any formats")
 	rootCmd.MarkFlagsMutuallyExclusive("formats", "no-downloads")
 
 	viper.BindPFlag("no-save", rootCmd.PersistentFlags().Lookup("no-save"))
@@ -83,7 +79,7 @@ func processMetadata(books []cdb.Book) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if ao3.IsPodfic() {
+			if ao3.IsPodfic() || ffmeta {
 				err := writeFFMeta(m, name)
 				if err != nil {
 					log.Fatal(err)
@@ -143,7 +139,7 @@ func writeMetaFile(r map[string]any, name string) error {
 
 func downloadFormats(b cdb.Book) {
 	for _, f := range b.Formats {
-		for _, ext := range formats {
+		for _, ext := range ao3.Formats() {
 			if strings.Contains(f, ext) {
 				fmt.Printf("downloading %s\n", b.Title+ext)
 				name := casing.Snake(b.Title) + ext
