@@ -23,7 +23,12 @@ const (
 	ao3Host   string = `archiveofourown.org`
 )
 
-func Work(u string, isPodfic bool) ([]cdb.Book, error) {
+type Scraper struct {
+	isPodfic bool
+	format   string
+}
+
+func Scrape(u string, isPodfic bool) ([]cdb.Book, error) {
 	var works []cdb.Book
 
 	ctx, cancel := chromedp.NewContext(context.Background())

@@ -14,7 +14,7 @@ var podficCmd = &cobra.Command{
 	Short:   "scrape a podfic",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		s, err := ao3.Work(args[0], true)
+		s, err := ao3.Scrape(args[0], true)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -47,7 +47,7 @@ func TestPage(t *testing.T) {
 }
 
 func TestPodfic(t *testing.T) {
-	books, err := Work(testPodfic, true)
+	books, err := Scrape(testPodfic, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -62,7 +62,7 @@ func TestPodfic(t *testing.T) {
 }
 
 func TestWork(t *testing.T) {
-	books, err := Work(testWork, false)
+	books, err := Scrape(testWork, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -77,7 +77,7 @@ func TestWork(t *testing.T) {
 }
 
 func TestWorkCmd(t *testing.T) {
-	books, err := Work(testWork, false)
+	books, err := Scrape(testWork, false)
 	if err != nil {
 		t.Error(err)
 	}
