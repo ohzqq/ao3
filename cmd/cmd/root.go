@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/danielgtaylor/casing"
 	"github.com/ohzqq/ao3"
+	"github.com/ohzqq/audbk"
 	"github.com/ohzqq/cdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -47,7 +51,7 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&isPodfic, "podfic", "p", false, "scrape podfic url")
 
-	rootCmd.PersistentFlags().StringSliceVarP(&flagEncode, "encode", "e", []string{".yaml"}, "encode [.yaml|.toml|.json|.ini]")
+	rootCmd.PersistentFlags().StringVarP(&flagEncode, "encode", "e", ".yaml", "encode [.yaml|.toml|.json|.ini]")
 
 	rootCmd.PersistentFlags().StringSliceVarP(&formats, "formats", "f", []string{".epub"}, "format to download")
 	rootCmd.PersistentFlags().BoolVarP(&noDownloads, "no-downloads", "d", false, "don't download any formats")
@@ -67,27 +71,74 @@ func initConfig() {
 	viper.SetDefault("no-save", false)
 	viper.SetDefault("no-downloads", false)
 	viper.SetDefault("formats", []string{".epub"})
-	viper.SetDefault("encode", []string{".yaml"})
+	viper.SetDefault("encode", ".yaml")
 }
 
 func processMetadata(books []cdb.Book) {
 	for _, b := range books {
-		if !noSave {
-			name := casing.Snake(b.Title) + flagEncode
-			err := b.Save(name, true)
+		m := b.StringMap()
+		if !ao3.DontSave() {
+			name := casing.Snake(b.Title)
+			err := writeMetaFile(m, name)
 			if err != nil {
 				log.Fatal(err)
 			}
-		} else {
-			err := b.Print(flagEncode, true)
-			if err != nil {
-				log.Fatal(err)
+			if ao3.IsPodfic() {
+				err := writeFFMeta(m, name)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
-		if !noDownloads {
+		if !ao3.NoDownloads() {
 			downloadFormats(b)
 		}
+		//err := b.Print(enc, true)
+		//if err != nil {
+		//log.Fatal(err)
+		//}
 	}
+}
+
+func writeFFMeta(r map[string]any, name string) error {
+	ff := audbk.NewFFMeta()
+	audbk.BookToFFMeta(ff, r)
+
+	ffm, err := os.Create(name + ".ini")
+	if err != nil {
+		return fmt.Errorf("write init error: %w\n", err)
+	}
+	defer ffm.Close()
+	ff.WriteTo(ffm)
+
+	return nil
+}
+
+func writeMetaFile(r map[string]any, name string) error {
+	var err error
+
+	enc := ao3.Encode()
+
+	if _, ok := r["formats"]; ok {
+		delete(r, "formats")
+	}
+
+	mf, err := os.Create(name + enc)
+	defer mf.Close()
+
+	switch enc {
+	case ".yaml":
+		err = yaml.NewEncoder(mf).Encode(r)
+	case ".json":
+		err = json.NewEncoder(mf).Encode(r)
+	case ".toml":
+		err = toml.NewEncoder(mf).Encode(r)
+	}
+
+	if err != nil {
+		return fmt.Errorf("write meta file err %w\n", err)
+	}
+	return nil
 }
 
 func downloadFormats(b cdb.Book) {

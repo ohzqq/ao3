@@ -15,7 +15,9 @@ var podficCmd = &cobra.Command{
 	Short:   "scrape a podfic",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.Set("is-podfic", true)
+		viper.Set("podfic", true)
+		viper.Set("no-downloads", true)
+
 		s, err := ao3.Scrape(args[0])
 		if err != nil {
 			log.Fatal(err)

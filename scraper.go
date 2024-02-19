@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	cookiemonster "github.com/MercuryEngineering/CookieMonster"
@@ -76,21 +77,23 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 	viper.Set("url", u)
 
 	var (
-		work    cdb.Book
-		pubdate string
-		formats []*cdp.Node
-		tags    []*cdp.Node
-		fandom  []*cdp.Node
-		ships   []*cdp.Node
-		con     []*cdp.Node
-		rel     []*cdp.Node
+		work     cdb.Book
+		pubdate  string
+		title    string
+		comments string
+		formats  []*cdp.Node
+		tags     []*cdp.Node
+		fandom   []*cdp.Node
+		ships    []*cdp.Node
+		con      []*cdp.Node
+		rel      []*cdp.Node
 	)
 
 	actions := []chromedp.Action{
 		Sleep(5 * time.Second),
 		chromedp.Navigate(u),
-		GetInnerHTML(Comments, &work.Comments),
-		GetString(Title, &work.Title),
+		GetInnerHTML(Comments, &comments),
+		GetString(Title, &title),
 		GetString(Pubdate, &pubdate),
 		GetAllNodes(Downloads, &formats),
 		GetNodes(Tags, &tags),
@@ -108,6 +111,8 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 		return work, err
 	}
 
+	work.Title = strings.TrimSpace(title)
+	work.Comments = strings.ReplaceAll(comments, "\n", "")
 	work.Pubdate = parsePubdate(pubdate)
 	work.Formats = parseFormats(formats)
 	work.Tags = parseTags(tags, ships, fandom)

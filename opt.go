@@ -18,8 +18,8 @@ func Formats() []string {
 	return viper.GetStringSlice("formats")
 }
 
-func Encode() []string {
-	return viper.GetStringSlice("encode")
+func Encode() string {
+	return viper.GetString("encode")
 }
 
 func CurrentURL() string {
