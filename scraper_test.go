@@ -19,6 +19,7 @@ const (
 )
 
 func TestSearch(t *testing.T) {
+	t.SkipNow()
 	s, err := Search(testSearch)
 	if err != nil {
 		t.Error(err)

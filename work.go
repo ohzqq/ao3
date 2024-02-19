@@ -2,6 +2,7 @@ package ao3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -47,27 +48,21 @@ func getComments(comments *string) chromedp.Action {
 	))
 }
 
-func getPubdate(ctx context.Context, book *cdb.Book) {
-	var pubdate string
-	err := chromedp.Run(ctx,
-		chromedp.Text(
-			selPubdate,
-			&pubdate,
-			chromedp.ByQuery,
-			chromedp.NodeReady,
-		),
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func getPubdate(pubdate *string) chromedp.Action {
+	return chromedp.Action(chromedp.Text(
+		selPubdate,
+		pubdate,
+		chromedp.ByQuery,
+		chromedp.NodeReady,
+	))
+}
 
+func parsePubdate(pubdate string) time.Time {
 	t, err := time.Parse(time.DateOnly, pubdate)
 	if err != nil {
 		t = time.Now()
 	}
-
-	book.Pubdate = t
+	return t
 }
 
 func getSeries(ctx context.Context, book *cdb.Book) {
@@ -82,7 +77,7 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 		),
 	)
 	if err != nil {
-		log.Println(err)
+		fmt.Errorf("%w %w\n", scrapeErr("series"), err)
 		return
 	}
 
@@ -92,87 +87,85 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 	book.Series = matches[seriesRegexp.SubexpIndex("name")]
 }
 
-func getFormats(ctx context.Context, book *cdb.Book) {
-	var nodes []*cdp.Node
-	err := chromedp.Run(ctx,
-		chromedp.Nodes(
-			selFormats,
-			&nodes,
-			chromedp.ByQueryAll,
-			chromedp.NodeReady,
-		),
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	for _, node := range nodes {
+func getFormats(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selFormats,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
+func parseFormats(nodes []*cdp.Node) []string {
+	formats := make([]string, len(nodes))
+	for i, node := range nodes {
 		t := node.AttributeValue("href")
-		book.Formats = append(book.Formats, ParseUrl(t).String())
+		formats[i] = ParseUrl(t).String()
 	}
+	return formats
 }
 
-func getRelated(ctx context.Context, book *cdb.Book) {
-	var nodes []*cdp.Node
-	err := chromedp.Run(ctx,
-		chromedp.Nodes(
-			selRelated,
-			&nodes,
-			chromedp.ByQueryAll,
-			chromedp.NodeReady,
-		),
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func getRelated(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selRelated,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
+func parseRelated(nodes []*cdp.Node) []string {
+	var rels []string
 	for _, node := range nodes {
-		//fmt.Printf("%+V\n", node)
 		if rel := node.AttributeValue("rel"); rel == "author" {
-			book.Authors = append(book.Authors, node.Children[0].NodeValue)
+			rels = append(rels, node.Children[0].NodeValue)
 		}
 	}
+	return rels
 }
 
-func getContributors(ctx context.Context, book *cdb.Book) {
-	var nodes []*cdp.Node
-	err := chromedp.Run(ctx,
-		chromedp.Nodes(
-			selAuthor,
-			&nodes,
-			chromedp.ByQueryAll,
-			chromedp.NodeReady,
-		),
-	)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	if IsPodfic() {
-		book.Narrators = append(book.Narrators, getFirstChildValues(nodes)...)
-		getRelated(ctx, book)
-		return
-	}
-	book.Authors = append(book.Authors, getFirstChildValues(nodes)...)
+func getContributors(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selAuthor,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
 }
 
-func getTags(ctx context.Context, book *cdb.Book) {
-	for _, sel := range []string{selRel, selTags, selFandom} {
-		var nodes []*cdp.Node
-		err := chromedp.Run(ctx,
-			chromedp.Nodes(
-				sel,
-				&nodes,
-				chromedp.ByQueryAll,
-				chromedp.NodeReady,
-			),
-		)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		book.Tags = append(book.Tags, getFirstChildValues(nodes)...)
+func getShips(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selRel,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
+func getFandom(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selFandom,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
+func getTags(nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		selTags,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
+func parseTags(nodes ...[]*cdp.Node) []string {
+	var tags []string
+	for _, n := range nodes {
+		tags = append(tags, getFirstChildValues(n)...)
 	}
+	return tags
 }
 
 func getFirstChildValues(nodes []*cdp.Node) []string {
@@ -208,4 +201,8 @@ func DownloadWork(u, name string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func scrapeErr(name string) error {
+	return fmt.Errorf("error scraping %s from %s\n", name, CurrentURL())
 }

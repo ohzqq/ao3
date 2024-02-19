@@ -2,6 +2,7 @@ package ao3
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/ohzqq/cdb"
 	"github.com/spf13/cast"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -36,7 +38,10 @@ func Scrape(u string) ([]cdb.Book, error) {
 		return works, err
 	}
 
-	work := GetWork(ctx, u)
+	work, err := GetWork(ctx, u)
+	if err != nil {
+		return works, err
+	}
 	works = append(works, work)
 
 	return works, nil
@@ -57,33 +62,74 @@ func Page(u string) ([]cdb.Book, error) {
 
 	links := GetLinkList(ctx, u)
 	for _, link := range links {
-		work := GetWork(ctx, link)
+		work, err := GetWork(ctx, link)
+		if err != nil {
+			return works, err
+		}
 		works = append(works, work)
 	}
 
 	return works, nil
 }
 
-func GetWork(ctx context.Context, u string) cdb.Book {
-	var work cdb.Book
+func GetWork(ctx context.Context, u string) (cdb.Book, error) {
+	viper.Set("url", u)
 
-	err := chromedp.Run(ctx,
-		Sleep(5*time.Second),
+	var (
+		work    cdb.Book
+		pubdate string
+		//series  string
+		formats []*cdp.Node
+		tags    []*cdp.Node
+		fandom  []*cdp.Node
+		ships   []*cdp.Node
+		con     []*cdp.Node
+		rel     []*cdp.Node
+		//con     []string
+	)
+
+	actions := []chromedp.Action{
+		Sleep(5 * time.Second),
 		chromedp.Navigate(u),
 		getTitle(&work.Title),
 		getComments(&work.Comments),
-	)
-	if err != nil {
-		log.Fatal(err)
+		getPubdate(&pubdate),
+		getFormats(&formats),
+		getTags(&tags),
+		getShips(&ships),
+		getFandom(&fandom),
+		getContributors(&con),
 	}
 
-	getTags(ctx, &work)
-	getContributors(ctx, &work)
-	getPubdate(ctx, &work)
-	getSeries(ctx, &work)
-	getFormats(ctx, &work)
+	if IsPodfic() {
+		actions = append(actions, getRelated(&rel))
+	}
 
-	return work
+	err := chromedp.Run(ctx,
+		actions...,
+	)
+	if err != nil {
+		return work, err
+	}
+
+	work.Pubdate = parsePubdate(pubdate)
+	work.Formats = parseFormats(formats)
+	work.Tags = parseTags(tags, ships, fandom)
+
+	var cons []string
+	if len(con) > 0 {
+		cons = append(cons, getFirstChildValues(con)...)
+	}
+	if len(rel) > 0 {
+		cons = append(cons, parseRelated(rel)...)
+	}
+
+	//getTags(ctx, &work)
+	//getPubdate(ctx, &work)
+	getSeries(ctx, &work)
+	//getFormats(ctx, &work)
+
+	return work, nil
 }
 
 func GetLinkList(ctx context.Context, u string) []string {
@@ -99,7 +145,7 @@ func GetLinkList(ctx context.Context, u string) []string {
 		),
 	)
 	if err != nil {
-		log.Println(err)
+		fmt.Errorf("%w %w\n", scrapeErr("link list"), err)
 		return []string{}
 	}
 

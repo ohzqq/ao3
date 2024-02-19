@@ -21,3 +21,7 @@ func Formats() []string {
 func Encode() []string {
 	return viper.GetStringSlice("encode")
 }
+
+func CurrentURL() string {
+	return viper.GetString("url")
+}
