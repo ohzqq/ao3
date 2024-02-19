@@ -23,12 +23,7 @@ const (
 	ao3Host   string = `archiveofourown.org`
 )
 
-type Scraper struct {
-	isPodfic bool
-	format   string
-}
-
-func Scrape(u string, isPodfic bool) ([]cdb.Book, error) {
+func Scrape(u string) ([]cdb.Book, error) {
 	var works []cdb.Book
 
 	ctx, cancel := chromedp.NewContext(context.Background())
@@ -41,13 +36,13 @@ func Scrape(u string, isPodfic bool) ([]cdb.Book, error) {
 		return works, err
 	}
 
-	work := GetWork(ctx, u, isPodfic)
+	work := GetWork(ctx, u)
 	works = append(works, work)
 
 	return works, nil
 }
 
-func Page(u string, isPodfic bool) ([]cdb.Book, error) {
+func Page(u string) ([]cdb.Book, error) {
 	var works []cdb.Book
 
 	ctx, cancel := chromedp.NewContext(context.Background())
@@ -62,14 +57,14 @@ func Page(u string, isPodfic bool) ([]cdb.Book, error) {
 
 	links := GetLinkList(ctx, u)
 	for _, link := range links {
-		work := GetWork(ctx, link, isPodfic)
+		work := GetWork(ctx, link)
 		works = append(works, work)
 	}
 
 	return works, nil
 }
 
-func GetWork(ctx context.Context, u string, isPodfic bool) cdb.Book {
+func GetWork(ctx context.Context, u string) cdb.Book {
 	var work cdb.Book
 
 	err := chromedp.Run(ctx,
@@ -83,7 +78,7 @@ func GetWork(ctx context.Context, u string, isPodfic bool) cdb.Book {
 	}
 
 	getTags(ctx, &work)
-	getContributors(ctx, &work, isPodfic)
+	getContributors(ctx, &work)
 	getPubdate(ctx, &work)
 	getSeries(ctx, &work)
 	getFormats(ctx, &work)

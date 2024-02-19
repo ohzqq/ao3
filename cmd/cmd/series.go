@@ -14,7 +14,7 @@ var seriesCmd = &cobra.Command{
 	Short:   "scrape a series",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		s, err := ao3.Page(args[0], isPodfic)
+		s, err := ao3.Page(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

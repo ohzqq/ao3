@@ -134,7 +134,7 @@ func getRelated(ctx context.Context, book *cdb.Book) {
 	}
 }
 
-func getContributors(ctx context.Context, book *cdb.Book, isPodfic bool) {
+func getContributors(ctx context.Context, book *cdb.Book) {
 	var nodes []*cdp.Node
 	err := chromedp.Run(ctx,
 		chromedp.Nodes(
@@ -148,7 +148,7 @@ func getContributors(ctx context.Context, book *cdb.Book, isPodfic bool) {
 		log.Println(err)
 		return
 	}
-	if isPodfic {
+	if IsPodfic() {
 		book.Narrators = append(book.Narrators, getFirstChildValues(nodes)...)
 		getRelated(ctx, book)
 		return

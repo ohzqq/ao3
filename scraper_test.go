@@ -7,6 +7,7 @@ import (
 
 	"github.com/danielgtaylor/casing"
 	"github.com/ohzqq/cdb"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -18,13 +19,13 @@ const (
 )
 
 func TestSearch(t *testing.T) {
-	s, err := Search(testSearch, false)
+	s, err := Search(testSearch)
 	if err != nil {
 		t.Error(err)
 	}
 	fmt.Printf("%v\n", s)
 
-	ns, err := Search(testSearchAll, false)
+	ns, err := Search(testSearchAll)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,7 +33,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestPage(t *testing.T) {
-	books, err := Page(testPage, false)
+	books, err := Page(testPage)
 	if err != nil {
 		t.Error(err)
 	}
@@ -47,7 +48,8 @@ func TestPage(t *testing.T) {
 }
 
 func TestPodfic(t *testing.T) {
-	books, err := Scrape(testPodfic, true)
+	viper.Set("is-podfic", true)
+	books, err := Scrape(testPodfic)
 	if err != nil {
 		t.Error(err)
 	}
@@ -62,7 +64,7 @@ func TestPodfic(t *testing.T) {
 }
 
 func TestWork(t *testing.T) {
-	books, err := Scrape(testWork, false)
+	books, err := Scrape(testWork)
 	if err != nil {
 		t.Error(err)
 	}
@@ -77,7 +79,7 @@ func TestWork(t *testing.T) {
 }
 
 func TestWorkCmd(t *testing.T) {
-	books, err := Scrape(testWork, false)
+	books, err := Scrape(testWork)
 	if err != nil {
 		t.Error(err)
 	}

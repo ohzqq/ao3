@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cast"
 )
 
-func Search(u string, isPodfic bool) ([]cdb.Book, error) {
+func Search(u string) ([]cdb.Book, error) {
 	sUrl := ParseUrl(u)
 	params := sUrl.Query()
 	for _, k := range SearchParams() {
@@ -23,10 +23,10 @@ func Search(u string, isPodfic bool) ([]cdb.Book, error) {
 	}
 	sUrl.RawQuery = params.Encode()
 
-	return parseList(sUrl, isPodfic)
+	return parseList(sUrl)
 }
 
-func SortAndFilter(u string, isPodfic bool) ([]cdb.Book, error) {
+func SortAndFilter(u string) ([]cdb.Book, error) {
 	sUrl := ParseUrl(u)
 	params := sUrl.Query()
 	for _, k := range SortAndFilterParams() {
@@ -36,10 +36,10 @@ func SortAndFilter(u string, isPodfic bool) ([]cdb.Book, error) {
 	}
 	sUrl.RawQuery = params.Encode()
 
-	return parseList(sUrl, isPodfic)
+	return parseList(sUrl)
 }
 
-func parseList(u *url.URL, isPodfic bool) ([]cdb.Book, error) {
+func parseList(u *url.URL) ([]cdb.Book, error) {
 	var works []cdb.Book
 
 	ctx, cancel := chromedp.NewContext(context.Background())
@@ -59,7 +59,7 @@ func parseList(u *url.URL, isPodfic bool) ([]cdb.Book, error) {
 		page := strconv.Itoa(i)
 		params.Set("page", page)
 		u.RawQuery = params.Encode()
-		w, err := Page(u.String(), isPodfic)
+		w, err := Page(u.String())
 		if err != nil {
 			return works, err
 		}
