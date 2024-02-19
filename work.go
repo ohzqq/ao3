@@ -2,6 +2,7 @@ package ao3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	Title        = `.preface h2.title`
+	Title        = `h2.title`
 	Author       = `h3.byline a`
 	Series       = `dd.series .position`
 	Comments     = `.preface .summary .userstuff`
@@ -30,17 +31,8 @@ const (
 	Downloads    = `li.download ul li a`
 )
 
-func GetTitle(val *string) chromedp.Action {
-	return chromedp.Action(chromedp.Text(
-		Title,
-		val,
-		chromedp.ByQuery,
-		chromedp.NodeReady,
-	))
-}
-
 func GetString(sel string, val *string) chromedp.Action {
-	return chromedp.Action(chromedp.Text(
+	return chromedp.Action(chromedp.TextContent(
 		sel,
 		val,
 		chromedp.ByQuery,
@@ -57,6 +49,15 @@ func GetNodes(sel string, nodes *[]*cdp.Node) chromedp.Action {
 	))
 }
 
+func GetAllNodes(sel string, nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		sel,
+		nodes,
+		chromedp.ByQueryAll,
+		chromedp.NodeReady,
+	))
+}
+
 func GetInnerHTML(sel string, val *string) chromedp.Action {
 	return chromedp.Action(chromedp.InnerHTML(
 		sel,
@@ -69,7 +70,7 @@ func GetInnerHTML(sel string, val *string) chromedp.Action {
 func getSeries(ctx context.Context, book *cdb.Book) {
 	var s string
 	err := chromedp.Run(ctx,
-		chromedp.Text(
+		chromedp.TextContent(
 			Series,
 			&s,
 			chromedp.ByQuery,
@@ -82,10 +83,35 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 		return
 	}
 
+	title, pos, err := parseSeriesText(s)
+	if err != nil {
+		fmt.Errorf("series parsing err: %w\n", err)
+	}
+
+	book.Series = title
+	book.SeriesIndex = pos
+}
+
+var NoTitleErr = errors.New("no title")
+
+func parseSeriesText(s string) (string, float64, error) {
+	var (
+		title string
+		pos   float64
+	)
+	if s == "" {
+		return title, pos, NoTitleErr
+	}
 	seriesRegexp := regexp.MustCompile(`Part (?P<pos>\d+) of (?P<name>.*)`)
 	matches := seriesRegexp.FindStringSubmatch(s)
-	book.SeriesIndex = cast.ToFloat64(matches[seriesRegexp.SubexpIndex("pos")])
-	book.Series = matches[seriesRegexp.SubexpIndex("name")]
+
+	if len(matches) < 1 {
+		return title, pos, fmt.Errorf("no matches for %s\n", s)
+	}
+
+	pos = cast.ToFloat64(matches[seriesRegexp.SubexpIndex("pos")])
+	title = matches[seriesRegexp.SubexpIndex("name")]
+	return title, pos, nil
 }
 
 func parsePubdate(pubdate string) time.Time {

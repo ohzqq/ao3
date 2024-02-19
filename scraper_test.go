@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testWork      = `https://archiveofourown.org/works/49186696`
+	testWork      = `https://archiveofourown.org/works/3221042`
 	testPage      = `https://archiveofourown.org/series/1331351`
 	testPodfic    = `https://archiveofourown.org/works/49186696`
 	testSearch    = `https://archiveofourown.org/works/search?work_search%5Bquery%5D=&work_search%5Btitle%5D=&work_search%5Bcreators%5D=&work_search%5Brevised_at%5D=&work_search%5Bcomplete%5D=T&work_search%5Bcrossover%5D=&work_search%5Bsingle_chapter%5D=0&work_search%5Bword_count%5D=&work_search%5Blanguage_id%5D=en&work_search%5Bfandom_names%5D=Teen+Wolf+%28TV%29&work_search%5Brating_ids%5D=&work_search%5Bcharacter_names%5D=&work_search%5Brelationship_names%5D=Derek+Hale%2FStiles+Stilinski%2CDerek+Hale%2FPeter+Hale&work_search%5Bfreeform_names%5D=&work_search%5Bhits%5D=&work_search%5Bkudos_count%5D=&work_search%5Bcomments_count%5D=&work_search%5Bbookmarks_count%5D=&work_search%5Bsort_column%5D=_score&work_search%5Bsort_direction%5D=desc&commit=Search`
@@ -43,13 +43,15 @@ func TestPage(t *testing.T) {
 		t.Error("no books returned, expected at least 1")
 	}
 
-	for k, v := range books[0].StringMapString() {
-		fmt.Printf("%s: %s\n", k, v)
+	for _, book := range books {
+		for k, v := range book.StringMapString() {
+			fmt.Printf("%s: %s\n", k, v)
+		}
 	}
 }
 
 func TestPodfic(t *testing.T) {
-	viper.Set("is-podfic", true)
+	viper.Set("podfic", true)
 	books, err := Scrape(testPodfic)
 	if err != nil {
 		t.Error(err)
@@ -59,8 +61,13 @@ func TestPodfic(t *testing.T) {
 		t.Error("no books returned, expected at least 1")
 	}
 
-	for k, v := range books[0].StringMapString() {
-		fmt.Printf("%s: %s\n", k, v)
+	for _, book := range books {
+		if book.Title == "" {
+			t.Fatal("no title")
+		}
+		for k, v := range book.StringMapString() {
+			fmt.Printf("%s: %s\n", k, v)
+		}
 	}
 }
 
@@ -74,8 +81,13 @@ func TestWork(t *testing.T) {
 		t.Error("no books returned, expected at least 1")
 	}
 
-	for k, v := range books[0].StringMapString() {
-		fmt.Printf("%s: %s\n", k, v)
+	for _, book := range books {
+		if book.Title == "" {
+			t.Fatal("no title")
+		}
+		for k, v := range book.StringMapString() {
+			fmt.Printf("%s: %s\n", k, v)
+		}
 	}
 }
 
@@ -85,6 +97,8 @@ func TestWorkCmd(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
+	w := viper.GetString("url")
+	println(w)
 
 	for _, book := range books {
 		if book.Title == "" {

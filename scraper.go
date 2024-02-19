@@ -89,10 +89,10 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 	actions := []chromedp.Action{
 		Sleep(5 * time.Second),
 		chromedp.Navigate(u),
-		GetTitle(&work.Title),
 		GetInnerHTML(Comments, &work.Comments),
+		GetString(Title, &work.Title),
 		GetString(Pubdate, &pubdate),
-		GetNodes(Downloads, &formats),
+		GetAllNodes(Downloads, &formats),
 		GetNodes(Tags, &tags),
 		GetNodes(Ships, &ships),
 		GetNodes(Fandom, &fandom),
@@ -100,12 +100,10 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 	}
 
 	if IsPodfic() {
-		actions = append(actions, GetNodes(RelatedWorks, &rel))
+		actions = append(actions, GetAllNodes(RelatedWorks, &rel))
 	}
 
-	err := chromedp.Run(ctx,
-		actions...,
-	)
+	err := chromedp.Run(ctx, actions...)
 	if err != nil {
 		return work, err
 	}
@@ -114,12 +112,17 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 	work.Formats = parseFormats(formats)
 	work.Tags = parseTags(tags, ships, fandom)
 
-	var cons []string
+	var auth []string
 	if len(con) > 0 {
-		cons = append(cons, getFirstChildValues(con)...)
+		auth = append(auth, getFirstChildValues(con)...)
+	}
+	if IsPodfic() {
+		work.Narrators = auth
+	} else {
+		work.Authors = auth
 	}
 	if len(rel) > 0 {
-		cons = append(cons, parseRelated(rel)...)
+		work.Authors = parseRelated(rel)
 	}
 
 	getSeries(ctx, &work)
@@ -130,7 +133,7 @@ func GetWork(ctx context.Context, u string) (cdb.Book, error) {
 func GetLinkList(ctx context.Context, u string) []string {
 	var nodes []*cdp.Node
 	err := chromedp.Run(ctx,
-		Sleep(5*time.Second),
+		Sleep(1*time.Second),
 		chromedp.Navigate(u),
 		chromedp.Nodes(
 			ListLink,
