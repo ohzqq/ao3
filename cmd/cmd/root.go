@@ -44,36 +44,30 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&flagURI, "url", "u", "", "scrape url")
 	rootCmd.PersistentFlags().BoolVar(&noSave, "no-save", false, "don't write metadata to disk")
+
 	rootCmd.PersistentFlags().BoolVarP(&isPodfic, "podfic", "p", false, "scrape podfic url")
 
-	rootCmd.PersistentFlags().StringVarP(&flagEncode, "encode", "e", ".yaml", "encode [.yaml|.toml|.json]")
+	rootCmd.PersistentFlags().StringSliceVarP(&flagEncode, "encode", "e", []string{".yaml"}, "encode [.yaml|.toml|.json|.ini]")
 
 	rootCmd.PersistentFlags().StringSliceVarP(&formats, "formats", "f", []string{".epub"}, "format to download")
 	rootCmd.PersistentFlags().BoolVarP(&noDownloads, "no-downloads", "d", false, "don't download any formats")
 	rootCmd.MarkFlagsMutuallyExclusive("formats", "no-downloads")
+
+	viper.BindPFlag("no-save", rootCmd.PersistentFlags().Lookup("no-save"))
+	viper.BindPFlag("no-downloads", rootCmd.PersistentFlags().Lookup("no-downloads"))
+	viper.BindPFlag("podfics", rootCmd.PersistentFlags().Lookup("podfics"))
+	viper.BindPFlag("formats", rootCmd.PersistentFlags().Lookup("formats"))
+	viper.BindPFlag("encode", rootCmd.PersistentFlags().Lookup("encode"))
 }
 
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".toot" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".toot")
-	}
-
 	viper.AutomaticEnv() // read in environment variables that match
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
+	viper.SetDefault("podfic", false)
+	viper.SetDefault("no-save", false)
+	viper.SetDefault("no-downloads", false)
+	viper.SetDefault("formats", []string{".epub"})
+	viper.SetDefault("encode", []string{".yaml"})
 }
 
 func processMetadata(books []cdb.Book) {
