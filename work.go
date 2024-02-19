@@ -17,41 +17,41 @@ import (
 )
 
 const (
-	selTitle    = `h2.title`
-	selAuthor   = `h3.byline a`
-	selSeries   = `dd.series .position`
-	selComments = `.preface .summary .userstuff`
-	selRel      = `dd.relationship a`
-	selTags     = `dd.freeform a`
-	selFandom   = `dd.fandom a`
-	selPubdate  = `dd.published`
-	selListLink = `li.work h4.heading a:first-of-type`
-	selRelated  = `ul.associations li a`
-	selFormats  = `li.download ul li a`
+	Title        = `h2.title`
+	Author       = `h3.byline a`
+	Series       = `dd.series .position`
+	Comments     = `.preface .summary .userstuff`
+	Ships        = `dd.relationship a`
+	Tags         = `dd.freeform a`
+	Fandom       = `dd.fandom a`
+	Pubdate      = `dd.published`
+	ListLink     = `li.work h4.heading a:first-of-type`
+	RelatedWorks = `ul.associations li a`
+	Downloads    = `li.download ul li a`
 )
 
-func getTitle(title *string) chromedp.Action {
+func GetString(sel string, val *string) chromedp.Action {
 	return chromedp.Action(chromedp.Text(
-		selTitle,
-		title,
+		sel,
+		val,
 		chromedp.ByQuery,
 		chromedp.NodeReady,
 	))
 }
 
-func getComments(comments *string) chromedp.Action {
+func GetNodes(sel string, nodes *[]*cdp.Node) chromedp.Action {
+	return chromedp.Action(chromedp.Nodes(
+		sel,
+		nodes,
+		chromedp.ByQuery,
+		chromedp.NodeReady,
+	))
+}
+
+func GetInnerHTML(sel string, val *string) chromedp.Action {
 	return chromedp.Action(chromedp.InnerHTML(
-		selComments,
-		comments,
-		chromedp.ByQuery,
-		chromedp.NodeReady,
-	))
-}
-
-func getPubdate(pubdate *string) chromedp.Action {
-	return chromedp.Action(chromedp.Text(
-		selPubdate,
-		pubdate,
+		sel,
+		val,
 		chromedp.ByQuery,
 		chromedp.NodeReady,
 	))
@@ -69,7 +69,7 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 	var s string
 	err := chromedp.Run(ctx,
 		chromedp.Text(
-			selSeries,
+			Series,
 			&s,
 			chromedp.ByQuery,
 			chromedp.NodeReady,
@@ -87,15 +87,6 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 	book.Series = matches[seriesRegexp.SubexpIndex("name")]
 }
 
-func getFormats(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		selFormats,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
-}
-
 func parseFormats(nodes []*cdp.Node) []string {
 	formats := make([]string, len(nodes))
 	for i, node := range nodes {
@@ -103,15 +94,6 @@ func parseFormats(nodes []*cdp.Node) []string {
 		formats[i] = ParseUrl(t).String()
 	}
 	return formats
-}
-
-func getRelated(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		selRelated,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
 }
 
 func parseRelated(nodes []*cdp.Node) []string {
@@ -126,7 +108,7 @@ func parseRelated(nodes []*cdp.Node) []string {
 
 func getContributors(nodes *[]*cdp.Node) chromedp.Action {
 	return chromedp.Action(chromedp.Nodes(
-		selAuthor,
+		Author,
 		nodes,
 		chromedp.ByQueryAll,
 		chromedp.NodeReady,
@@ -135,7 +117,7 @@ func getContributors(nodes *[]*cdp.Node) chromedp.Action {
 
 func getShips(nodes *[]*cdp.Node) chromedp.Action {
 	return chromedp.Action(chromedp.Nodes(
-		selRel,
+		Ships,
 		nodes,
 		chromedp.ByQueryAll,
 		chromedp.NodeReady,
@@ -144,7 +126,7 @@ func getShips(nodes *[]*cdp.Node) chromedp.Action {
 
 func getFandom(nodes *[]*cdp.Node) chromedp.Action {
 	return chromedp.Action(chromedp.Nodes(
-		selFandom,
+		Fandom,
 		nodes,
 		chromedp.ByQueryAll,
 		chromedp.NodeReady,
@@ -153,7 +135,7 @@ func getFandom(nodes *[]*cdp.Node) chromedp.Action {
 
 func getTags(nodes *[]*cdp.Node) chromedp.Action {
 	return chromedp.Action(chromedp.Nodes(
-		selTags,
+		Tags,
 		nodes,
 		chromedp.ByQueryAll,
 		chromedp.NodeReady,
