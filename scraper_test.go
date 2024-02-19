@@ -86,6 +86,9 @@ func TestWorkCmd(t *testing.T) {
 	}
 
 	for _, book := range books {
+		if book.Title == "" {
+			t.Error("no title")
+		}
 		err := book.Save(casing.Snake(book.Title)+".yaml", true)
 		if err != nil {
 			t.Error(err)

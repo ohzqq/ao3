@@ -57,14 +57,6 @@ func GetInnerHTML(sel string, val *string) chromedp.Action {
 	))
 }
 
-func parsePubdate(pubdate string) time.Time {
-	t, err := time.Parse(time.DateOnly, pubdate)
-	if err != nil {
-		t = time.Now()
-	}
-	return t
-}
-
 func getSeries(ctx context.Context, book *cdb.Book) {
 	var s string
 	err := chromedp.Run(ctx,
@@ -87,6 +79,14 @@ func getSeries(ctx context.Context, book *cdb.Book) {
 	book.Series = matches[seriesRegexp.SubexpIndex("name")]
 }
 
+func parsePubdate(pubdate string) time.Time {
+	t, err := time.Parse(time.DateOnly, pubdate)
+	if err != nil {
+		t = time.Now()
+	}
+	return t
+}
+
 func parseFormats(nodes []*cdp.Node) []string {
 	formats := make([]string, len(nodes))
 	for i, node := range nodes {
@@ -104,42 +104,6 @@ func parseRelated(nodes []*cdp.Node) []string {
 		}
 	}
 	return rels
-}
-
-func getContributors(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		Author,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
-}
-
-func getShips(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		Ships,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
-}
-
-func getFandom(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		Fandom,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
-}
-
-func getTags(nodes *[]*cdp.Node) chromedp.Action {
-	return chromedp.Action(chromedp.Nodes(
-		Tags,
-		nodes,
-		chromedp.ByQueryAll,
-		chromedp.NodeReady,
-	))
 }
 
 func parseTags(nodes ...[]*cdp.Node) []string {
